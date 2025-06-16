@@ -50,7 +50,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         <div className="p-6">
           <div className="mb-4">
             <h3 className="mb-2 text-sm font-medium text-gray-700">
-              Share Link
+              Link para compartir
             </h3>
             <div className="flex items-center gap-2">
               <div className="flex-1 px-3 py-2 text-sm text-gray-600 break-all border border-gray-300 rounded-md bg-gray-50">
@@ -69,7 +69,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             </div>
             {copied && (
               <p className="mt-1 text-sm text-green-600">
-                Link copied to clipboard!
+                Link copiado al portapapeles!
               </p>
             )}
           </div>
@@ -84,11 +84,19 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 {shareableQuery.config.name}
               </div>
               <div>
-                <span className="font-medium">Type:</span>{" "}
+                <span className="font-medium">Tipo:</span>{" "}
                 {shareableQuery.config.type.toUpperCase()}
               </div>
               <div>
-                <span className="font-medium">Shared:</span>{" "}
+                <span className="font-medium">Columnas renombradas:</span>{" "}
+                {Object.keys(shareableQuery.customColumnNames || {}).length > 0
+                  ? `${
+                      Object.keys(shareableQuery.customColumnNames || {}).length
+                    } columnas renombradas`
+                  : "Ninguna"}
+              </div>
+              <div>
+                <span className="font-medium">Compartido:</span>{" "}
                 {new Date(shareableQuery.timestamp).toLocaleString()}
               </div>
             </div>
@@ -98,10 +106,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             <div className="flex items-start gap-2">
               <div className="w-4 h-4 text-yellow-600 mt-0.5">⚠️</div>
               <div className="text-sm text-yellow-800">
-                <p className="mb-1 font-medium">Security Notice</p>
+                <p className="mb-1 font-medium">Advertencia</p>
                 <p>
-                  This link contains your database configuration. Only share
-                  with trusted recipients.
+                  Este enlace contiene la configuración de su base de datos.
+                  Compártalo solo con destinatarios de confianza.
                 </p>
               </div>
             </div>

@@ -6,21 +6,31 @@ import {
   ChevronRight,
   Download,
   Filter,
+  Pencil,
+  RefreshCw,
   Search,
   Share2,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { Filter as FilterType, QueryResult } from "../types/database";
 
 interface ResultsTableProps {
   results: QueryResult;
-  onShare?: () => void; // Make onShare optional
+  onShare?: () => void;
+  onRefresh?: () => void; // Add this prop
+  isRefreshing?: boolean; // Add this prop
+  initialCustomColumnNames?: { [key: string]: string };
+  onCustomColumnNamesChange?: (names: { [key: string]: string }) => void;
 }
 
 export const ResultsTable: React.FC<ResultsTableProps> = ({
   results,
   onShare,
+  onRefresh,
+  isRefreshing,
+  initialCustomColumnNames = {},
+  onCustomColumnNamesChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<FilterType[]>([]);
@@ -29,6 +39,15 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showColumnEditor, setShowColumnEditor] = useState(false);
+  const [customColumnNames, setCustomColumnNames] = useState(
+    initialCustomColumnNames
+  );
+
+  // Add this effect to notify parent of changes
+  useEffect(() => {
+    onCustomColumnNamesChange?.(customColumnNames);
+  }, [customColumnNames, onCustomColumnNamesChange]);
 
   const filteredAndSortedData = useMemo(() => {
     let data = results.rows;
@@ -147,39 +166,130 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
     setFilters(filters.filter((_, i) => i !== index));
   };
 
+  // Función para obtener el nombre de la columna (personalizado o original)
+  const getColumnName = (originalName: string) => {
+    return customColumnNames[originalName] || originalName;
+  };
+
+  // Modal para editar nombres de columnas
+  const ColumnEditorModal = () => {
+    const [tempColumnNames, setTempColumnNames] = useState({
+      ...customColumnNames,
+    });
+
+    const handleSave = () => {
+      setCustomColumnNames(tempColumnNames);
+      setShowColumnEditor(false);
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
+          <h3 className="mb-4 text-lg font-medium text-gray-900">
+            Editor de nombres de columnas
+          </h3>
+
+          <div className="space-y-3 overflow-y-auto max-h-96">
+            {results.columns.map((column) => (
+              <div key={column} className="flex items-center gap-2">
+                <label className="w-1/3 text-sm text-gray-600">{column}</label>
+                <input
+                  type="text"
+                  value={tempColumnNames[column] || ""}
+                  onChange={(e) =>
+                    setTempColumnNames({
+                      ...tempColumnNames,
+                      [column]: e.target.value,
+                    })
+                  }
+                  placeholder="New column name..."
+                  className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <button
+              onClick={() => setShowColumnEditor(false)}
+              className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700"
+            >
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md">
-      {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">
-            Query Results ({filteredAndSortedData.length} rows)
+            Resultados ({filteredAndSortedData.length} rows)
           </h2>
 
           <div className="flex items-center gap-2">
+            {/* Add refresh button - only show if onRefresh is provided */}
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-3 py-2 transition-colors border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                {isRefreshing ? "Refreshing..." : "Refresh"}
+              </button>
+            )}
+
+            <button
+              onClick={() => setShowColumnEditor(true)}
+              className="flex items-center gap-2 px-3 py-2 transition-colors border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit Columns
+            </button>
+
+            {/* Filter Button */}
             <button
               onClick={() => setShowFilterPanel(!showFilterPanel)}
-              className="flex items-center gap-2 px-3 py-2 transition-colors border border-gray-300 rounded-md hover:bg-gray-50"
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all rounded-md
+                ${
+                  showFilterPanel
+                    ? "bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100"
+                    : "text-gray-600 border border-gray-300 hover:bg-gray-50"
+                }`}
             >
               <Filter className="w-4 h-4" />
-              Filters
+              Filtros
             </button>
 
+            {/* Export Button */}
             <button
               onClick={exportToExcel}
-              className="flex items-center gap-2 px-3 py-2 transition-colors border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 transition-all border border-gray-300 rounded-md hover:bg-gray-50 hover:text-gray-900"
             >
               <Download className="w-4 h-4" />
-              Excel
+              Exportar
             </button>
 
-            {onShare && ( // Only show share button if onShare is provided
+            {/* Share Button - Only in normal view */}
+            {onShare && (
               <button
                 onClick={onShare}
-                className="flex items-center gap-2 px-3 py-2 text-white transition-colors bg-blue-600 rounded-md hover:bg-blue-700"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-all bg-blue-600 rounded-md hover:bg-blue-700"
               >
                 <Share2 className="w-4 h-4" />
-                Share
+                Compartir
               </button>
             )}
           </div>
@@ -282,7 +392,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
                   onClick={() => handleSort(column)}
                 >
                   <div className="flex items-center gap-2">
-                    <span>{column}</span>
+                    <span>{getColumnName(column)}</span>
                     {getSortIcon(column)}
                   </div>
                 </th>
@@ -305,6 +415,9 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Column Editor Modal */}
+      {showColumnEditor && <ColumnEditorModal />}
 
       {/* Pagination */}
       <div className="p-6 border-t border-gray-200">

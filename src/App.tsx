@@ -16,6 +16,10 @@ function App() {
   const [query, setQuery] = useState("");
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isSharedView, setIsSharedView] = useState(false);
+  const [customColumnNames, setCustomColumnNames] = useState<{
+    [key: string]: string;
+  }>({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     isConnecting,
@@ -34,6 +38,7 @@ function App() {
       setConfig(sharedQuery.config);
       setQuery(sharedQuery.query);
       setIsSharedView(true);
+      setCustomColumnNames(sharedQuery.customColumnNames || {});
 
       // Auto-execute the shared query
       testConnection(sharedQuery.config).then((success) => {
@@ -56,10 +61,22 @@ function App() {
     }
   };
 
+  const handleRefresh = async () => {
+    if (!config || !query) return;
+
+    setIsRefreshing(true);
+    try {
+      await executeQuery(config, query);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const getShareableQuery = (): ShareableQuery => ({
     config: config!,
     query,
     timestamp: Date.now(),
+    customColumnNames,
   });
 
   return (
@@ -73,17 +90,17 @@ function App() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Database Query Tool
+                {isSharedView ? config?.name : "Reporteador de Consultas"}
               </h1>
               <p className="text-sm text-gray-600">
                 {isSharedView
-                  ? "Shared Query Results"
-                  : "Connect, query, and analyze your database data"}
+                  ? `Base de datos ${config?.type.toUpperCase()}`
+                  : "Conéctate, consulta y analiza los datos de tu base de datos"}
               </p>
             </div>
             {isSharedView && (
               <div className="px-3 py-1 ml-auto text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
-                Shared View
+                Vista de Consulta Compartida
               </div>
             )}
           </div>
@@ -132,6 +149,10 @@ function App() {
             <ResultsTable
               results={results}
               onShare={!isSharedView ? handleShare : undefined}
+              onRefresh={isSharedView ? handleRefresh : undefined}
+              isRefreshing={isRefreshing}
+              initialCustomColumnNames={customColumnNames}
+              onCustomColumnNamesChange={setCustomColumnNames}
             />
           )}
 
@@ -143,8 +164,8 @@ function App() {
                 <p className="font-medium text-blue-800">Ready to Connect</p>
               </div>
               <p className="mt-1 text-blue-700">
-                Click "Test Connection" to establish a connection to your
-                database.
+                Click "testear conexion" para establecer una conexión a tu base
+                de datos.
               </p>
             </div>
           )}
@@ -157,7 +178,8 @@ function App() {
             query && (
               <div className="p-8 text-center border border-gray-200 rounded-lg bg-gray-50">
                 <p className="text-gray-600">
-                  Click "Execute" to run your query and see results here.
+                  Click ejecutar consulta para ejecutar tu consulta y ver los
+                  resultados aquí.
                 </p>
               </div>
             )}

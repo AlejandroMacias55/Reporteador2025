@@ -1,6 +1,6 @@
 export interface DatabaseConfig {
   id: string;
-  type: 'sqlserver' | 'mysql' | 'postgresql' | 'oracle';
+  type: "sqlserver" | "mysql" | "postgresql" | "oracle";
   connectionString: string;
   name: string;
 }
@@ -14,7 +14,13 @@ export interface QueryResult {
 
 export interface Filter {
   column: string;
-  operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan';
+  operator:
+    | "equals"
+    | "contains"
+    | "startsWith"
+    | "endsWith"
+    | "greaterThan"
+    | "lessThan";
   value: string;
 }
 
@@ -22,4 +28,5 @@ export interface ShareableQuery {
   config: DatabaseConfig;
   query: string;
   timestamp: number;
+  customColumnNames?: { [key: string]: string }; // Add this line
 }
