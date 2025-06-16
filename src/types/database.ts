@@ -1,4 +1,7 @@
+import { ReactNode } from "react";
+
 export interface DatabaseConfig {
+  [x: string]: ReactNode;
   id: string;
   type: "sqlserver" | "mysql" | "postgresql" | "oracle";
   connectionString: string;
@@ -7,6 +10,7 @@ export interface DatabaseConfig {
 
 export interface QueryResult {
   columns: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rows: any[][];
   totalRows: number;
   executionTime: number;
@@ -29,4 +33,12 @@ export interface ShareableQuery {
   query: string;
   timestamp: number;
   customColumnNames?: { [key: string]: string }; // Add this line
+}
+
+export interface SavedConnection {
+  id: string;
+  name: string;
+  config: DatabaseConfig;
+  lastQuery?: string;
+  lastUsed: number;
 }

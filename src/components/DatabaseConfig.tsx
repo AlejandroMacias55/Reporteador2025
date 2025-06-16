@@ -14,6 +14,7 @@ interface DatabaseConfigProps {
   config: DatabaseConfigType | null;
   onConfigChange: (config: DatabaseConfigType) => void;
   onTestConnection: (config: DatabaseConfigType) => Promise<boolean>;
+  onSaveConnection: () => void;
   isConnecting: boolean;
   connectionStatus: "idle" | "connected" | "error";
 }
@@ -37,6 +38,7 @@ export const DatabaseConfig: React.FC<DatabaseConfigProps> = ({
   config,
   onConfigChange,
   onTestConnection,
+  onSaveConnection,
   isConnecting,
   connectionStatus,
 }) => {
@@ -193,6 +195,14 @@ export const DatabaseConfig: React.FC<DatabaseConfigProps> = ({
           </button>
         </div>
       </form>
+
+      <button
+        onClick={onSaveConnection}
+        disabled={!config || connectionStatus !== "connected"}
+        className="px-4 py-2 mt-4 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+      >
+        Guardar Conexión
+      </button>
     </div>
   );
 };

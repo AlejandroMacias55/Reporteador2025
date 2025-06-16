@@ -1,12 +1,16 @@
 import { AlertCircle, Database } from "lucide-react";
 import { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { DatabaseConfig } from "./components/DatabaseConfig";
 import { QueryEditor } from "./components/QueryEditor";
 import { ResultsTable } from "./components/ResultsTable";
+import { SavedConnections } from "./components/SavedConnections";
 import { ShareDialog } from "./components/ShareDialog";
 import { useDatabase } from "./hooks/useDatabase";
+import { useSavedConnections } from "./hooks/useSavedConnections";
 import {
   DatabaseConfig as DatabaseConfigType,
+  SavedConnection,
   ShareableQuery,
 } from "./types/database";
 import { getSharedQueryFromUrl } from "./utils/urlSharing";
@@ -30,6 +34,9 @@ function App() {
     testConnection,
     executeQuery,
   } = useDatabase();
+
+  const { savedConnections, saveConnection, deleteConnection } =
+    useSavedConnections();
 
   // Check for shared query on mount
   useEffect(() => {
@@ -79,6 +86,33 @@ function App() {
     customColumnNames,
   });
 
+  // Add this function to handle saving connections
+  const handleSaveConnection = () => {
+    if (config) {
+      const connection: SavedConnection = {
+        id: uuidv4(),
+        name: config.name,
+        config,
+        lastQuery: query,
+        lastUsed: Date.now(),
+      };
+      saveConnection(connection);
+    }
+  };
+
+  // Add this function to handle selecting a saved connection
+  const handleSelectConnection = (connection: SavedConnection) => {
+    setConfig(connection.config);
+    if (connection.lastQuery) {
+      setQuery(connection.lastQuery);
+    }
+    // Update last used timestamp
+    saveConnection({
+      ...connection,
+      lastUsed: Date.now(),
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -124,12 +158,18 @@ function App() {
           {/* Only show Database Configuration and Query Editor if not in shared view */}
           {!isSharedView && (
             <>
+              <SavedConnections
+                connections={savedConnections}
+                onSelect={handleSelectConnection}
+                onDelete={deleteConnection}
+              />
               <DatabaseConfig
                 config={config}
                 onConfigChange={setConfig}
                 onTestConnection={testConnection}
                 isConnecting={isConnecting}
                 connectionStatus={connectionStatus}
+                onSaveConnection={handleSaveConnection} // Add this prop
               />
 
               {connectionStatus === "connected" && (
