@@ -101,16 +101,19 @@ function App() {
   };
 
   // Add this function to handle selecting a saved connection
-  const handleSelectConnection = (connection: SavedConnection) => {
+  const handleSelectConnection = async (connection: SavedConnection) => {
     setConfig(connection.config);
     if (connection.lastQuery) {
       setQuery(connection.lastQuery);
     }
-    // Update last used timestamp
-    saveConnection({
-      ...connection,
-      lastUsed: Date.now(),
-    });
+    // Test connection automatically when selecting
+    const success = await testConnection(connection.config);
+    if (success) {
+      saveConnection({
+        ...connection,
+        lastUsed: Date.now(),
+      });
+    }
   };
 
   return (

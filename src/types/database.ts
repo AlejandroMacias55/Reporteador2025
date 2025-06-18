@@ -14,6 +14,8 @@ export interface QueryResult {
   rows: any[][];
   totalRows: number;
   executionTime: number;
+  currentPage: number;
+  pageSize: number;
 }
 
 export interface Filter {
@@ -41,4 +43,12 @@ export interface SavedConnection {
   config: DatabaseConfig;
   lastQuery?: string;
   lastUsed: number;
+}
+
+export interface QueryParams {
+  page: number;
+  pageSize: number;
+  filters?: Filter[];
+  sortColumn?: string;
+  sortDirection?: "ASC" | "DESC";
 }
